@@ -87,3 +87,12 @@ Add to the prompt:
 - Prescriptive step-by-step reasoning plans for problems Fable can reason through itself.
 - Hard-coding/test-gaming incentives — pair any test mention with "general solution, not test-specific".
 - Boilerplate from this guide that the task shape doesn't need.
+
+## Field notes (post-launch reports, June 2026)
+
+Lessons from heavy real-world Fable use (Theo/t3.gg's launch review — youtube.com/watch?v=7IewbRdaBWI), folded in 11 June 2026:
+
+- **Pre-empt strong priors.** Fable carries enormous baked-in knowledge of conventions, and it will trust them over your unstated reality — a repo whose `main` branch deploys to staging was repeatedly "diagnosed" as broken because the model assumed main = production, even after correction. If the user's setup deviates from convention in any way (branch→environment mapping, non-standard ports, unusual auth flows, intentional architecture quirks), state the deviation explicitly in the prompt's context section. The interview should probe for these.
+- **State legitimate context for sensitive-adjacent tasks.** Fable has safety routing: security, cryptography, SEO-manipulation-adjacent, and similar topics can trigger refusals, silent capability degradation, or fallback to a lesser model. If the task is legitimately in such a domain, the prompt should establish ownership, authorization, and purpose up front ("this is my own site", "authorized pentest engagement") rather than leaving the model to guess intent.
+- **Checkpoint for usage cutoffs, not just context windows.** Fable burns usage limits fast; a long run can be killed mid-task by a session cap with work unsaved. For long-horizon prompts, frame state files and incremental commits as resumability insurance: "commit and update progress.txt after each completed component, so the task can resume cleanly in a new session if this one is cut off."
+- **Grant verification capability, not just criteria.** Fable will build its own verification (fuzzers, test beds) when permitted, and self-unblocks better when given tools — browser/computer use for UI debugging, permission to write throwaway test harnesses. Where verification matters, the prompt should grant the means, not only state the criteria: "you may write fuzzers or temporary test scripts to validate this; clean them up when done."

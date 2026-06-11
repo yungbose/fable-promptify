@@ -42,7 +42,7 @@ Score the rough prompt against the four pillars. For each, write down what is mi
 | **Context** | Every constraint carries its motivation ("this is an experiment, real chance we delete it in a month" — not "keep it simple") |
 | **Scope & ambition** | Boundaries are explicit (what NOT to touch), and the ambition level is stated (minimal fix vs go-beyond-the-basics) |
 
-Also flag if unstated: output format, autonomy level (may it push, deploy, send, spend?), long-horizon needs (state files, memory, fresh-context restart instructions).
+Also flag if unstated: output format, autonomy level (may it push, deploy, send, spend?), long-horizon needs (state files, memory, fresh-context restart instructions), and convention deviations — any way the user's setup differs from what Fable would assume (branch-to-environment mapping, unusual auth, intentional quirks). Fable's strong priors override unstated reality, so these must surface in the interview and land in the prompt's context section.
 
 ## Phase 3 — Interview until crystal
 
