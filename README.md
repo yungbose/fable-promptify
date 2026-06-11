@@ -6,7 +6,7 @@
 ![Last commit](https://img.shields.io/github/last-commit/yungbose/fable-promptify?style=flat-square&labelColor=0B0A1A&color=ab0d88)
 ![Agent Skills](https://img.shields.io/badge/Agent_Skills-compatible-ff004d?style=flat-square&labelColor=0B0A1A)
 
-I have Fable 5 until the dreaded June 22nd, and I don't want to burn a single session of it on a half-formed prompt. fable-promptify takes a rough prompt ("improve the onboarding flow") and interviews you until the aim is crystal, then compiles it into a prompt with an observable goal, verification Fable can run without you, and the *why* behind every constraint. Happy building!
+We have Fable 5 until the dreaded June 22nd, and I don't want to burn a single session of it on a half-formed prompt. fable-promptify takes a rough prompt ("improve the onboarding flow") and interviews you until the aim is crystal, then compiles it into a prompt with an observable goal, verification Fable can run without you, and the *why* behind every constraint. Happy building!
 
 **Quick start:**
 
