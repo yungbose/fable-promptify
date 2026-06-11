@@ -6,7 +6,7 @@
 ![Last commit](https://img.shields.io/github/last-commit/yungbose/fable-promptify?style=flat-square&labelColor=0B0A1A&color=ab0d88)
 ![Agent Skills](https://img.shields.io/badge/Agent_Skills-compatible-ff004d?style=flat-square&labelColor=0B0A1A)
 
-I have Fable 5 until the dreaded June 22nd, and I don't want to burn a single session of it on a half-formed prompt. Fable runs for hours, tests its own work, and self-corrects — which makes the prompt the whole game: it doesn't need you checking it's doing the work right, it needs to be pointed at the *right* work. fable-promptify takes a rough prompt ("make the expenses dashboard better") and interviews you until the aim is crystal, then compiles it into a prompt with an observable goal, verification Fable can run without you, and the *why* behind every constraint. Built for the countdown; just as useful after it.
+I have Fable 5 until the dreaded June 22nd, and I don't want to burn a single session of it on a half-formed prompt. fable-promptify takes a rough prompt ("make the expenses dashboard better") and interviews you until the aim is crystal, then compiles it into a prompt with an observable goal, verification Fable can run without you, and the *why* behind every constraint. Happy building!
 
 **Quick start:**
 
@@ -24,11 +24,9 @@ npx skills add yungbose/fable-promptify
 
 ## Why this exists
 
-The Claude Code team's launch guidance for Fable 5 describes a failure mode I kept hitting: *"I might not actually know what I want, or I might not know what is possible."* Their fix is to involve Claude early — "ask Claude to interview me about the implementation before writing the final spec."
+Every serious Fable prompt had me re-deriving the same rules from three scattered sources: the Anthropic prompting docs, Thariq's launch video, and Lance Martin's piece on designing loops. So I distilled them once, into a reference the skill reads at draft time.
 
-The trap is that a capable model hides this failure instead of surfacing it. Give Fable a vague prompt and it produces something polished — it will pick *an* interpretation of "better", build it well, and verify it against the goal it invented. The output looks finished, so you don't notice the aim was never yours. A polished prompt built on a guessed goal is worse than a rough one.
-
-I also kept re-deriving the same Fable prompting rules from three scattered sources every time I wrote a serious prompt: the Anthropic prompting docs, the Claude Code team's launch guidance, and Anthropic's notes on designing self-correction loops for Mythos-class models. fable-promptify compiles both — the interview habit and the distilled best practices — into one repeatable skill.
+The launch video also names a trap I kept hitting: *"I might not actually know what I want."* Give Fable a vague prompt and it builds *an* interpretation — well enough that you never notice the aim was never yours. The fix from the video is "ask Claude to interview me before writing the spec"; this skill makes that automatic.
 
 ## How it works
 
