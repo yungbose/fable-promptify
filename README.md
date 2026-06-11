@@ -1,0 +1,166 @@
+# fable-promptify
+
+**The interview-first prompt compiler for Claude Fable 5 sessions.**
+
+![License: MIT](https://img.shields.io/badge/license-MIT-0027ff?style=flat-square&labelColor=0B0A1A)
+![Last commit](https://img.shields.io/github/last-commit/yungbose/fable-promptify?style=flat-square&labelColor=0B0A1A&color=ab0d88)
+![Agent Skills](https://img.shields.io/badge/Agent_Skills-compatible-ff004d?style=flat-square&labelColor=0B0A1A)
+
+Fable 5 runs for hours, tests its own work, and self-corrects in loops. That moves all the leverage into the prompt: the model no longer needs you to check it's doing the work right, it needs you to be sure it's doing the *right* work. fable-promptify takes a rough prompt ("make the expenses dashboard better") and interviews you until the aim is crystal, then compiles it into a prompt with an observable goal, verification Fable can run without you, and the *why* behind every constraint.
+
+<p align="center">
+  <img src="assets/fable.gif" alt="A lone traveller walking a forest path toward a distant castle — direction over supervision" />
+</p>
+
+## Why this exists
+
+The Claude Code team's launch guidance for Fable 5 describes a failure mode I kept hitting: *"I might not actually know what I want, or I might not know what is possible."* Their fix is to involve Claude early — "ask Claude to interview me about the implementation before writing the final spec."
+
+The trap is that a capable model hides this failure instead of surfacing it. Give Fable a vague prompt and it produces something polished — it will pick *an* interpretation of "better", build it well, and verify it against the goal it invented. The output looks finished, so you don't notice the aim was never yours. A polished prompt built on a guessed goal is worse than a rough one.
+
+I also kept re-deriving the same Fable prompting rules from three scattered sources every time I wrote a serious prompt: the Anthropic prompting docs, the Claude Code team's launch guidance, and Anthropic's notes on designing self-correction loops for Mythos-class models. fable-promptify compiles both — the interview habit and the distilled best practices — into one repeatable skill.
+
+## How it works
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'ui-sans-serif, -apple-system, system-ui, sans-serif','fontSize':'14px','primaryColor':'#141026','primaryTextColor':'#FFFFFF','primaryBorderColor':'#541AC4','lineColor':'#7A6BD0','textColor':'#E5E7EB','edgeLabelBackground':'#0B0A1A','clusterBkg':'#120A24','clusterBorder':'#3A2A6A'},'flowchart':{'curve':'basis','nodeSpacing':50,'rankSpacing':55,'padding':10}}}%%
+flowchart TD
+    A["Rough prompt\n('make the dashboard better')"] --> B["Ingest\ninvestigate the repo first,\nclassify the task shape"]
+    B --> C["Reflect\nscore against the four pillars:\naim · verification · context · scope"]
+    C --> D["Interview round\nconcrete options + a recommendation,\nnever open-ended essays"]
+    D --> E{"Exit test:\ncould a zero-context\ncolleague execute\nwithout asking?"}
+    E -- "no — answers exposed\nnew ambiguity" --> D
+    E -- yes --> F["Draft\ncompile via the distilled guide:\ncalm prose, action verbs,\nverification baked in"]
+    F --> G["Deliver\ncopyable prompt + session setup\nadvice + run here or fresh session?"]
+
+    classDef g0 fill:#0A0F2E,stroke:#0027FF,color:#FFFFFF
+    classDef g1 fill:#150A2A,stroke:#541AC4,color:#FFFFFF
+    classDef g2 fill:#220A20,stroke:#AB0D88,color:#FFFFFF
+    classDef g3 fill:#2A0915,stroke:#FF004D,color:#FFFFFF
+    class A,B g0
+    class C,D,E g1
+    class F g2
+    class G g3
+```
+
+### The four pillars
+
+Every Fable prompt earns its autonomy when four things are crystal. The reflection phase scores the rough prompt against them; the interview only asks about what's missing.
+
+| Pillar | Crystal when... |
+|---|---|
+| **Aim** | "Done" is an observable outcome, not an activity — "users can export a CSV of X", not "work on exports" |
+| **Verification** | Fable can check its own work without you: tests, a rubric of checkable criteria, observable behaviour |
+| **Context** | Every constraint carries its motivation — "this is an experiment, real chance we delete it in a month", not "keep it simple" |
+| **Scope & ambition** | Boundaries are explicit (what NOT to touch), and the ambition level is stated (minimal fix vs go-beyond-the-basics) |
+
+### What the compiled prompt looks like
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'ui-sans-serif, -apple-system, system-ui, sans-serif','fontSize':'14px','primaryColor':'#141026','primaryTextColor':'#FFFFFF','primaryBorderColor':'#541AC4','lineColor':'#7A6BD0','textColor':'#E5E7EB','edgeLabelBackground':'#0B0A1A','clusterBkg':'#120A24','clusterBorder':'#3A2A6A'},'flowchart':{'curve':'basis','nodeSpacing':40,'rankSpacing':45,'padding':10}}}%%
+flowchart LR
+    subgraph prompt ["The compiled prompt (in order)"]
+        direction TB
+        P1["Context\nwhat this is and why it matters"] --> P2["Aim\ndone-criteria as observable outcomes"]
+        P2 --> P3["Constraints, each with its why\n(Fable generalises from the motivation)"]
+        P3 --> P4["Verification\n'before you finish, verify against...'"]
+        P4 --> P5["Session mechanics\nonly if long-horizon: state files,\nrestart instructions, /goal"]
+    end
+
+    classDef g0 fill:#0A0F2E,stroke:#0027FF,color:#FFFFFF
+    classDef g1 fill:#150A2A,stroke:#541AC4,color:#FFFFFF
+    classDef g2 fill:#220A20,stroke:#AB0D88,color:#FFFFFF
+    class P1,P2 g0
+    class P3,P4 g1
+    class P5 g2
+```
+
+The task shape decides how much of this you get. A quick bug fix compiles to 3–8 lines (aim + verification, nothing else). A long-horizon autonomous run adds state files (`tests.json`, `progress.txt`), fresh-context restart instructions, and a verifier-subagent pass. The right amount of prompt is the minimum the task needs — importing every best practice into every prompt is one of the failure modes the skill explicitly guards against.
+
+## Getting started
+
+Install with the open skills CLI:
+
+```bash
+npx skills add yungbose/fable-promptify
+```
+
+Or copy it into your agent's skills directory by hand (`~/.claude/skills/` for Claude Code):
+
+```bash
+git clone https://github.com/yungbose/fable-promptify.git
+cp -r fable-promptify/fable-promptify ~/.claude/skills/fable-promptify
+```
+
+Then, in any session:
+
+```
+/fable-promptify make the expenses dashboard better
+```
+
+It will investigate your repo, ask you what "better" means in concrete options, keep asking until the aim passes the exit test, and hand you a compiled prompt plus the choice: run it here, or paste it into a fresh Fable session.
+
+## Built with its own discipline
+
+The skill was created behind a staging contract (via [upskill](https://github.com/yungbose/upskill)) and gated by a RED/GREEN test before it was allowed onto disk. The test is preserved in `fable-promptify/tests/` as a permanent regression check.
+
+**RED (no skill):** an agent asked to "turn this rough prompt into the best possible Fable 5 prompt: *make the expenses dashboard better*" produced a full, polished prompt in its first response. It decided — without asking — that "better" meant summary cards, category charts, and filtering. Plausible, well-structured, and built entirely on a guessed aim.
+
+**GREEN (with skill):** the same task produced an interview round instead: what's the biggest problem, what does success look like as an observable outcome, how ambitious should this be, and what's the *why* behind each constraint. Given answers, it correctly applied the exit test, declared the aim crystal, and compiled a prompt with three observable done-criteria, every constraint carrying its motivation, a baked-in self-check, and session setup advice.
+
+| | Without the skill | With the skill |
+|---|---|---|
+| First response | Polished prompt on an invented aim | Interview round with options + recommendation |
+| Constraint handling | None asked for | Elicited with the why, woven into the prompt |
+| Verification | Generic ("run the tests") | Observable done-criteria + self-check instruction |
+| Stopping | n/a | Applied the exit test; no padding rounds |
+
+## Design decisions
+
+### 1. Interview until crystal, not a fixed round count
+The exit condition is a quality gate, not a question budget: *could a colleague with zero context execute from the current understanding without asking a single question?* One round if the rough prompt was nearly there; several if each answer exposes new ambiguity. The same test prevents the opposite failure — interviewing past clarity is annoyance, not rigour, so the skill stops the moment the test passes.
+
+### 2. The deliverable is the prompt, never the execution
+The skill never drifts into doing the task mid-flow. Refining and executing are different jobs with different context needs — the refined prompt usually belongs in a *fresh* session precisely because the current one has accumulated unrelated context. Execution is offered at the end as an explicit choice, not assumed.
+
+### 3. Four pillars as the rubric, not a checklist of tips
+The three source documents contain dozens of techniques. Most are situational. The reflection phase deliberately scores against only four things — aim, verification, context, scope & ambition — because those are the ones that decide whether Fable's autonomy works for you or against you. Everything else (XML tags, examples, prompt ordering) is drafting mechanics, applied at compile time from the reference guide without bothering the user.
+
+### 4. Context, not constraints — enforced at interview time
+"Keep it simple" copied verbatim into the output is a compile failure. When the user gives a bare constraint, the interview asks for the motivation behind it, and the compiled prompt carries the why ("this is an experiment; don't build anything painful to throw away"). Fable generalises from motivations — it catches things you didn't think to forbid. Bare rules don't generalise.
+
+### 5. Calm prose, by rule
+No CAPS, no "MUST", no "CRITICAL" in compiled prompts. Aggressive emphasis was a crutch for older models that undertriggered; Fable-class models are responsive enough that it causes overtriggering instead. This is a hard drafting rule precisely because it's counterintuitive — years of prompt-writing habit push the other way.
+
+### 6. Investigate before asking
+A question the repo can answer is a wasted interview round and an erosion of trust. The ingest phase reads the project's CLAUDE.md, relevant files, and recent commits first; the interview only asks what reflection flagged *and* the repo can't answer. "What test framework do you use?" is a Read, not a question.
+
+### 7. The best practices live in one reference file
+All three sources are distilled into `references/fable-prompting-guide.md`, and the skill reads it at draft time rather than working from memory. One file to update when Anthropic publishes new guidance; the skill's behaviour updates with it. The guide also carries per-task-shape sections (quick task / feature / long-horizon / research / writing) so right-sizing is data, not judgment.
+
+### 8. Right-sized output over complete output
+Every line of the compiled prompt must earn its place. A 10-line bug-fix prompt with long-horizon state-file boilerplate is worse than the rough original — it dilutes the signal Fable actually needs. Task-shape classification happens at ingest, and the draft phase only pulls the guide sections that shape needs.
+
+### 9. Improvement wiring from day one
+The skill ships with the [upskill](https://github.com/yungbose/upskill) artifact set: `learnings.md` (read at every run start), `run-journal.md`, a domain-specific retrospective checklist, and a `tests/` folder seeded with the creation-gate test. If the operator keeps revising compiled prompts the same way, the retro captures it and the correction applies on the next run — the prompt compiler improves the same way the prompts do.
+
+## Sources
+
+The reference guide distils three documents (June 2026):
+
+1. **[Anthropic prompting best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices)** — clarity and directness, context behind instructions, XML structure, calm-prompting for 4.6+ models, long-horizon state management, anti-overengineering and anti-test-gaming guidance, the self-check pattern.
+2. **Claude Code team launch guidance (Thariq)** — the mindset shift from supervising to directing; thought partner / goals-with-verification / ambition; the interview-me pattern; context-not-constraints.
+3. **"Tips for Getting the Most Out of Mythos-Class Models" (Lance Martin, Anthropic)** — design loops rather than steering; rubrics as environment feedback; verifier subagents over self-critique; the memory progression (fail → investigate → verify → distill → consult).
+
+## Pairs with upskill
+
+fable-promptify front-loads clarity into a session; [upskill](https://github.com/yungbose/upskill) extracts learning out of it afterwards. Use both and a session is bracketed: compiled aim going in, compiled corrections coming out.
+
+## Further reading
+
+| File | Purpose |
+|---|---|
+| `fable-promptify/SKILL.md` | The full procedure (five phases, exit test, common mistakes) |
+| `fable-promptify/references/fable-prompting-guide.md` | The distilled best-practice guide (four pillars, style rules, per-shape templates, anti-patterns) |
+| `fable-promptify/references/retrospective-checklist.md` | Domain-specific retro checks (interview-first, constraint motivation, calm prose, right-sizing) |
+| `fable-promptify/tests/interview-first.md` | The RED/GREEN creation-gate test |
