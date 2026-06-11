@@ -6,7 +6,7 @@
 ![Last commit](https://img.shields.io/github/last-commit/yungbose/fable-promptify?style=flat-square&labelColor=0B0A1A&color=ab0d88)
 ![Agent Skills](https://img.shields.io/badge/Agent_Skills-compatible-ff004d?style=flat-square&labelColor=0B0A1A)
 
-I have Fable 5 until the dreaded June 22nd, and I don't want to burn a single session of it on a half-formed prompt. fable-promptify takes a rough prompt ("make the expenses dashboard better") and interviews you until the aim is crystal, then compiles it into a prompt with an observable goal, verification Fable can run without you, and the *why* behind every constraint. Happy building!
+I have Fable 5 until the dreaded June 22nd, and I don't want to burn a single session of it on a half-formed prompt. fable-promptify takes a rough prompt ("improve the onboarding flow") and interviews you until the aim is crystal, then compiles it into a prompt with an observable goal, verification Fable can run without you, and the *why* behind every constraint. Happy building!
 
 **Quick start:**
 
@@ -33,7 +33,7 @@ The launch video also names a trap I kept hitting: *"I might not actually know w
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'fontFamily':'ui-sans-serif, -apple-system, system-ui, sans-serif','fontSize':'14px','primaryColor':'#141026','primaryTextColor':'#FFFFFF','primaryBorderColor':'#541AC4','lineColor':'#7A6BD0','textColor':'#E5E7EB','edgeLabelBackground':'#0B0A1A','clusterBkg':'#120A24','clusterBorder':'#3A2A6A'},'flowchart':{'curve':'basis','nodeSpacing':50,'rankSpacing':55,'padding':10}}}%%
 flowchart TD
-    A["Rough prompt\n('make the dashboard better')"] --> B["Ingest\ninvestigate the repo first,\nclassify the task shape"]
+    A["Rough prompt\n('improve the onboarding flow')"] --> B["Ingest\ninvestigate the repo first,\nclassify the task shape"]
     B --> C["Reflect\nscore against the four pillars:\naim · verification · context · scope"]
     C --> D["Interview round\nconcrete options + a recommendation,\nnever open-ended essays"]
     D --> E{"Exit test:\ncould a zero-context\ncolleague execute\nwithout asking?"}
@@ -112,7 +112,7 @@ It will investigate your repo, ask you what "better" means in concrete options, 
 
 The skill was created behind a staging contract (via [upskill](https://github.com/yungbose/upskill)) and gated by a RED/GREEN test before it was allowed onto disk. The test is preserved in `fable-promptify/tests/` as a permanent regression check.
 
-**RED (no skill):** an agent asked to "turn this rough prompt into the best possible Fable 5 prompt: *make the expenses dashboard better*" produced a full, polished prompt in its first response. It decided — without asking — that "better" meant summary cards, category charts, and filtering. Plausible, well-structured, and built entirely on a guessed aim.
+**RED (no skill):** an agent asked to turn a deliberately vague one-liner into "the best possible Fable 5 prompt" produced a full, polished prompt in its first response. It decided — without asking — what "better" meant. Plausible, well-structured, and built entirely on a guessed aim.
 
 **GREEN (with skill):** the same task produced an interview round instead: what's the biggest problem, what does success look like as an observable outcome, how ambitious should this be, and what's the *why* behind each constraint. Given answers, it correctly applied the exit test, declared the aim crystal, and compiled a prompt with three observable done-criteria, every constraint carrying its motivation, a baked-in self-check, and session setup advice.
 
