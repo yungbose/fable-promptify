@@ -1,6 +1,6 @@
 # Fable 5 prompting guide (distilled)
 
-Sources: Anthropic prompting best practices (platform.claude.com, Claude 4.6/5 era), Claude Code team launch guidance (Thariq, June 2026), "Tips for Getting the Most Out of Mythos-Class Models" (Lance Martin, MTS @ Anthropic, June 2026). Distilled June 2026 — re-check the docs page if Anthropic releases new Fable guidance.
+Sources: Anthropic prompting best practices (platform.claude.com, Claude 4.6/5 era), Fable 5 launch video (Thariq @trq212, Claude Code team, June 2026 — https://x.com/ClaudeDevs/status/2064399512664526853), "Designing loops with Fable 5" (Lance Martin @RLanceMartin, MTS @ Anthropic, June 2026 — https://x.com/RLanceMartin/status/2064397389189071163). Distilled June 2026 — re-check the docs page if Anthropic releases new Fable guidance.
 
 ## The mindset shift
 

@@ -6,7 +6,17 @@
 ![Last commit](https://img.shields.io/github/last-commit/yungbose/fable-promptify?style=flat-square&labelColor=0B0A1A&color=ab0d88)
 ![Agent Skills](https://img.shields.io/badge/Agent_Skills-compatible-ff004d?style=flat-square&labelColor=0B0A1A)
 
-Fable 5 runs for hours, tests its own work, and self-corrects in loops. That moves all the leverage into the prompt: the model no longer needs you to check it's doing the work right, it needs you to be sure it's doing the *right* work. fable-promptify takes a rough prompt ("make the expenses dashboard better") and interviews you until the aim is crystal, then compiles it into a prompt with an observable goal, verification Fable can run without you, and the *why* behind every constraint.
+I have Fable 5 until the dreaded June 22nd, and I don't want to burn a single session of it on a half-formed prompt. Fable runs for hours, tests its own work, and self-corrects — which makes the prompt the whole game: it doesn't need you checking it's doing the work right, it needs to be pointed at the *right* work. fable-promptify takes a rough prompt ("make the expenses dashboard better") and interviews you until the aim is crystal, then compiles it into a prompt with an observable goal, verification Fable can run without you, and the *why* behind every constraint. Built for the countdown; just as useful after it.
+
+**Quick start:**
+
+```bash
+npx skills add yungbose/fable-promptify
+```
+
+```
+/fable-promptify <your rough prompt>
+```
 
 <p align="center">
   <img src="assets/fable.gif" alt="A lone traveller walking a forest path toward a distant castle — direction over supervision" />
@@ -149,8 +159,8 @@ The skill ships with the [upskill](https://github.com/yungbose/upskill) artifact
 The reference guide distils three documents (June 2026):
 
 1. **[Anthropic prompting best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices)** — clarity and directness, context behind instructions, XML structure, calm-prompting for 4.6+ models, long-horizon state management, anti-overengineering and anti-test-gaming guidance, the self-check pattern.
-2. **Claude Code team launch guidance (Thariq)** — the mindset shift from supervising to directing; thought partner / goals-with-verification / ambition; the interview-me pattern; context-not-constraints.
-3. **"Tips for Getting the Most Out of Mythos-Class Models" (Lance Martin, Anthropic)** — design loops rather than steering; rubrics as environment feedback; verifier subagents over self-critique; the memory progression (fail → investigate → verify → distill → consult).
+2. **[Fable 5 launch video](https://x.com/ClaudeDevs/status/2064399512664526853)** (Thariq, [@trq212](https://x.com/trq212), Claude Code team) — the mindset shift from supervising to directing; thought partner / goals-with-verification / ambition; the interview-me pattern; context-not-constraints.
+3. **["Designing loops with Fable 5"](https://x.com/RLanceMartin/status/2064397389189071163)** (Lance Martin, [@RLanceMartin](https://x.com/RLanceMartin), Anthropic) — design loops rather than steering; rubrics as environment feedback; verifier subagents over self-critique; the memory progression (fail → investigate → verify → distill → consult).
 
 ## Pairs with upskill
 
