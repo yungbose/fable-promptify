@@ -39,7 +39,7 @@ flowchart TD
     D --> E{"Exit test:\ncould a zero-context\ncolleague execute\nwithout asking?"}
     E -- "no — answers exposed\nnew ambiguity" --> D
     E -- yes --> F["Draft\ncompile via the distilled guide:\ncalm prose, action verbs,\nverification baked in"]
-    F --> G["Deliver\ncopyable prompt + session setup\nadvice + run here or fresh session?"]
+    F --> G["Deliver\ncopyable prompt + /goal companion\nwhen goal-suited + loop choice +\nrun here or fresh session?"]
 
     classDef g0 fill:#0A0F2E,stroke:#0027FF,color:#FFFFFF
     classDef g1 fill:#150A2A,stroke:#541AC4,color:#FFFFFF
@@ -84,6 +84,24 @@ flowchart LR
 ```
 
 The task shape decides how much of this you get. A quick bug fix compiles to 3–8 lines (aim + verification, nothing else). A long-horizon autonomous run adds state files (`tests.json`, `progress.txt`), fresh-context restart instructions, and a verifier-subagent pass. The right amount of prompt is the minimum the task needs — importing every best practice into every prompt is one of the failure modes the skill explicitly guards against.
+
+## Goal-suited tasks get a second artifact: the /goal companion
+
+Claude Code's [`/goal`](https://code.claude.com/docs/en/goal) turns a session into a goal-based loop: after every turn, a small fast evaluator model (Haiku by default) reads your condition plus the transcript and decides whether Claude is done — "not met" sends it back to work with the reason as steering. Two mechanics shape everything: the condition is capped at **4,000 characters**, and the evaluator **runs no tools** — it can only judge what Claude's own output has put in the transcript.
+
+So when a task has deterministic exit criteria (tests pass, build exits 0, a score clears a threshold), fable-promptify compiles a **second artifact** alongside the prompt: a compact completion contract for the evaluator. Every criterion pairs a measurable end state with the check that proves it ("`npm test` exits 0 — run it and show the summary"), the constraints that matter, and a turn cap inside the text. The context and the *why* stay in the prompt — the goal carries only what the evaluator needs to answer yes/no.
+
+Delivery is keyed to task shape:
+
+| Task shape | Pattern | Why |
+|---|---|---|
+| Quick verifiable task | **Goal-only** — one `/goal` line carries task + check + cap | Setting a goal immediately starts a turn; no separate prompt needed |
+| Feature build / long-horizon | **Spec file + compact goal** (the default) — compiled prompt saved as a handover file, goal says "implement the spec in `<file>` fully" + the contract | One paste; every turn including the first is goal-evaluated; the file survives context refreshes |
+| Already mid-session | **Prompt-then-goal** — paste the prompt, set the goal once work is underway | Supported, but in a fresh session the spec-file pattern needs one paste and has no unevaluated first turn |
+
+The one thing it never does is cram the compiled prompt into the goal argument: the 4,000-char cap forces lossy compression of exactly what makes a Fable prompt work (context-with-why), and the evaluator re-reads the condition every turn — it needs the contract, not the story.
+
+Subjective outcomes (design taste, prose voice) are deliberately *not* goal-suited — a small evaluator model can't judge them. Those get a verifier subagent instead.
 
 ## Getting started
 
@@ -149,17 +167,22 @@ All three sources are distilled into `references/fable-prompting-guide.md`, and 
 ### 8. Right-sized output over complete output
 Every line of the compiled prompt must earn its place. A 10-line bug-fix prompt with long-horizon state-file boilerplate is worse than the rough original — it dilutes the signal Fable actually needs. Task-shape classification happens at ingest, and the draft phase only pulls the guide sections that shape needs.
 
-### 9. Improvement wiring from day one
+### 9. The goal is a contract for the evaluator, not a compressed prompt
+Prompt and goal are different artifacts for different readers. The prompt is read by Fable and carries context, motivation, and instructions at whatever length the task needs. The goal is re-read every turn by a small evaluator model that runs no tools, so it carries only transcript-verifiable criteria, constraints, and a turn cap — under 4,000 characters, with the count reported at delivery. This split follows the loop taxonomy in the Claude Code team's ["Designing Loops for Claude Code Agents"](https://x.com/ClaudeDevs/status/2074208949205881033): you hand the goal-based loop *the stop condition*, and deterministic criteria are what let the evaluator stop the loop at the earliest correct moment.
+
+### 10. Improvement wiring from day one
 The skill ships with the [upskill](https://github.com/yungbose/upskill) artifact set: `learnings.md` (read at every run start), `run-journal.md`, a domain-specific retrospective checklist, and a `tests/` folder seeded with the creation-gate test. If the operator keeps revising compiled prompts the same way, the retro captures it and the correction applies on the next run — the prompt compiler improves the same way the prompts do.
 
 ## Sources
 
-The reference guide distils three documents (June 2026):
+The reference guide distils these documents (June–July 2026):
 
 1. **[Anthropic prompting best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices)** — clarity and directness, context behind instructions, XML structure, calm-prompting for 4.6+ models, long-horizon state management, anti-overengineering and anti-test-gaming guidance, the self-check pattern.
 2. **[Fable 5 launch video](https://x.com/ClaudeDevs/status/2064399512664526853)** (Thariq, [@trq212](https://x.com/trq212), Claude Code team) — the mindset shift from supervising to directing; thought partner / goals-with-verification / ambition; the interview-me pattern; context-not-constraints.
 3. **["Designing loops with Fable 5"](https://x.com/RLanceMartin/status/2064397389189071163)** (Lance Martin, [@RLanceMartin](https://x.com/RLanceMartin), Anthropic) — design loops rather than steering; rubrics as environment feedback; verifier subagents over self-critique; the memory progression (fail → investigate → verify → distill → consult).
 4. **["Fable is Mythos, and it is really good"](https://www.youtube.com/watch?v=7IewbRdaBWI)** (Theo, [@theo](https://x.com/theo), t3.gg) — field-tested lessons from heavy launch-week use: pre-empting Fable's strong priors with explicit convention deviations, continuous checkpointing against unforeseeable cutoffs, and granting verification capability (tools, throwaway harnesses), not just criteria. Adversarially reviewed before inclusion; the claims that didn't survive review were dropped.
+5. **["Designing Loops for Claude Code Agents"](https://x.com/ClaudeDevs/status/2074208949205881033)** ([@delba_oliveira](https://x.com/delba_oliveira), Claude Code team, July 2026) — the four-loop taxonomy (turn-based / goal-based / time-based / proactive), what you hand off in each, and the token-budget rules: deterministic criteria, explicit turn caps, scripts for deterministic work, pilot before a large run.
+6. **[Official `/goal` docs](https://code.claude.com/docs/en/goal)** (code.claude.com, fetched July 2026) — the mechanics the goal companion is drafted against: session-scoped stop check, Haiku-default evaluator that sees the condition + transcript but runs no tools, the 4,000-character condition cap, turn caps inside the condition text, and headless `claude -p "/goal ..."` runs.
 
 ## Pairs with upskill
 
@@ -173,3 +196,4 @@ fable-promptify front-loads clarity into a session; [upskill](https://github.com
 | `fable-promptify/references/fable-prompting-guide.md` | The distilled best-practice guide (four pillars, style rules, per-shape templates, anti-patterns) |
 | `fable-promptify/references/retrospective-checklist.md` | Domain-specific retro checks (interview-first, constraint motivation, calm prose, right-sizing) |
 | `fable-promptify/tests/interview-first.md` | The RED/GREEN creation-gate test |
+| `fable-promptify/tests/goal-companion.md` | The RED/GREEN test for the /goal companion (transcript-verifiable criteria, pattern choice, char cap) |

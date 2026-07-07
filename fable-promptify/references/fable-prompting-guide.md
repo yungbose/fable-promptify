@@ -1,6 +1,6 @@
 # Fable 5 prompting guide (distilled)
 
-Sources: Anthropic prompting best practices (platform.claude.com, Claude 4.6/5 era), Fable 5 launch video (Thariq @trq212, Claude Code team, June 2026 — https://x.com/ClaudeDevs/status/2064399512664526853), "Designing loops with Fable 5" (Lance Martin @RLanceMartin, MTS @ Anthropic, June 2026 — https://x.com/RLanceMartin/status/2064397389189071163). Distilled June 2026 — re-check the docs page if Anthropic releases new Fable guidance. The convention-priors, continuous-checkpointing, and capability-granting points were informed by Theo's launch review (@theo — https://x.com/theo, "Fable is Mythos, and it is really good" — https://www.youtube.com/watch?v=7IewbRdaBWI) and adversarially reviewed before inclusion.
+Sources: Anthropic prompting best practices (platform.claude.com, Claude 4.6/5 era), Fable 5 launch video (Thariq @trq212, Claude Code team, June 2026 — https://x.com/ClaudeDevs/status/2064399512664526853), "Designing loops with Fable 5" (Lance Martin @RLanceMartin, MTS @ Anthropic, June 2026 — https://x.com/RLanceMartin/status/2064397389189071163), "Designing Loops for Claude Code Agents" (@delba_oliveira, Claude Code team, July 2026 — https://x.com/ClaudeDevs/status/2074208949205881033), and the official `/goal` docs (https://code.claude.com/docs/en/goal, fetched July 2026). Distilled June–July 2026 — re-check the docs page if Anthropic releases new Fable guidance. The convention-priors, continuous-checkpointing, and capability-granting points were informed by Theo's launch review (@theo — https://x.com/theo, "Fable is Mythos, and it is really good" — https://www.youtube.com/watch?v=7IewbRdaBWI) and adversarially reviewed before inclusion.
 
 ## The mindset shift
 
@@ -56,7 +56,7 @@ Full four pillars. Consider: interview-first ("interview me about the implementa
 
 ### Long-horizon autonomous run (hours, multi-context-window)
 Add to the prompt:
-- **Goal + completion discipline**: "Set a goal to implement the spec fully. Continue working systematically until complete; don't stop early due to token budget — save progress and state before the context refreshes."
+- **Goal + completion discipline**: deliver as spec file + compact `/goal` (pattern 2 in "Loops and /goal"): the prompt becomes the handover file, the goal is the completion contract. In the prompt itself: "Continue working systematically until complete; don't stop early due to token budget — save progress and state before the context refreshes."
 - **State files**: structured state in JSON (`tests.json` with pass/fail status), freeform progress in `progress.txt`, git commits as checkpoints after each completed component — runs can be cut off without warning (usage caps, crashes), so checkpoint continuously, not only when context runs low. "It is unacceptable to remove or edit tests."
 - **Fresh-context restart instructions**: "Review progress.txt, tests.json, and the git log. Run the fundamental integration test before implementing anything new."
 - **Setup scripts**: encourage an `init.sh` so servers/tests/linters restart gracefully in a new window.
@@ -72,13 +72,57 @@ Add to the prompt:
 - Voice, audience, length, format — with an example of each if the user has one.
 - For frontend/visual work: ask for distinctive, creative output explicitly; name the aesthetic direction. Generic prompts produce generic "AI slop" design.
 
-## Session mechanics to recommend (delivery advice, not always in the prompt)
+## Loops and /goal (session primitives)
 
-- **`/goal`** — for runs that should continue until a goal is satisfied; Fable hill-climbs against it.
+A loop is an agent repeating cycles of work until a stop condition is met. Pick the primitive at delivery time — the loop type is a design decision, not a default:
+
+| Loop | You hand off | Use when | Primitive |
+|---|---|---|---|
+| **Turn-based** | the check | exploring or deciding; short tasks | a normal session + verification skills |
+| **Goal-based** | the stop condition | "done" is verifiable from Claude's own output | `/goal` |
+| **Time-based** | the trigger | recurring work, or watching an external system (CI, a queue) | `/loop` (local) / `/schedule` (cloud) |
+| **Proactive** | the prompt itself | a recurring stream of well-defined work | `/schedule` + `/goal` + workflows + auto mode |
+
+### /goal mechanics (what a drafted goal must respect)
+
+- `/goal <condition>` sets a **session-scoped stop check**: after every turn, a small fast evaluator model (Haiku by default) reads the condition **plus the transcript** and answers met / not met. A "not met" reason is injected as next-turn steering; "met" ends the loop.
+- The evaluator **runs no tools and reads no files**. It judges only what Fable has surfaced in the transcript — so every criterion must name the check whose output will appear there ("`npm test` exits 0", "`git status` is clean"), not a state of the world.
+- The condition is capped at **4,000 characters**. There are no flags: turn/time caps go inside the text ("stop after 20 turns").
+- Setting a goal **immediately starts a turn** with the condition as the directive. A new `/goal` replaces the old; `/goal clear` cancels; bare `/goal` shows status (turns evaluated, token spend, the evaluator's last reason). An active goal survives `--resume` (counters reset).
+- Headless: `claude -p "/goal <condition>"` runs the whole loop in one invocation.
+- A durable condition has three parts: **one measurable end state**, **the stated check that proves it**, and **the constraints that matter** (what must not change) — plus the turn cap.
+
+### The three delivery patterns
+
+1. **Goal-only** — quick verifiable task. The condition carries the task, end state + check, and turn cap in one `/goal` invocation. No separate prompt: setting the goal fires the first turn.
+2. **Spec file + compact goal** — feature builds and long-horizon runs (the default). The full compiled prompt lives in a handover/plan file; the goal argument is a completion contract: "Implement the spec in `<file>` fully" + criteria + constraints + turn cap. One paste; every turn including the first is goal-evaluated. The file also survives context refreshes, which the goal argument alone does not help with.
+3. **Prompt-then-goal** — mid-session. Paste the compiled prompt, set the compact goal after work is underway. Keep for interactive sessions; in a fresh session pattern 2 is strictly better.
+
+Never compress the compiled prompt into the goal argument: the 4,000-char cap destroys context-with-why, and the evaluator re-reads the condition every turn — it needs the contract, not the story.
+
+### Goal condition template
+
+```
+Implement the spec in <file> fully. Done when:
+1. <end state> — verified by <check Claude runs, output shown>
+2. <end state> — verified by <check>
+Constraints: <what must not change>.
+Stop after <N> turns if not complete; report remaining gaps.
+```
+
+### Managing the loop's token budget (from the loops guidance)
+
+- Deterministic criteria + explicit turn caps let the evaluator stop the loop at the earliest correct moment.
+- Scripts for deterministic work — a skill that ships a script beats re-deriving steps each iteration.
+- Time-based loops: match the interval to how often the watched thing actually changes; prefer reacting to events over polling.
+- Pilot before a large run; check `/goal` (bare) and `/usage` to see turns and token spend.
+
+## Other session mechanics to recommend (delivery advice, not always in the prompt)
+
 - **Workflows** — for verification fan-out: "use a workflow to verify each part of the plan and prepare a report on what was implemented and if anything differed."
 - **Fresh session vs current** — a fresh session when the current conversation has accumulated unrelated context; current when the conversation context IS the context.
-- **Verifier subagent over self-critique** — grading in an independent context window outperforms self-grading.
-- **Loops over steering** — rather than directly steering Fable step-by-step, design the loop: goal/rubric for feedback, memory for cross-session learning, and let it self-correct.
+- **Verifier subagent over self-critique** — grading in an independent context window outperforms self-grading. Use this (not `/goal`) for taste-judged outcomes: a small evaluator model cannot judge design quality or prose voice.
+- **Loops over steering** — rather than directly steering Fable step-by-step, design the loop: goal/rubric for feedback, memory for cross-session learning, and let it self-correct. When a result misses the bar, fix the system (the skill, the rubric, the goal), not just the instance.
 
 ## Anti-patterns (never put these in a drafted prompt)
 

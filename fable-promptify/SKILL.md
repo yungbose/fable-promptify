@@ -30,6 +30,7 @@ The skill never starts executing the task mid-flow. The deliverable is the promp
    - **Long-horizon autonomous run** (hours, multi-context-window) — add state files, memory, loop design
    - **Research / analysis** — success criteria + source verification + structured notes
    - **Writing / creative** — voice, audience, format examples
+4. Alongside the shape, note whether the task is **goal-suited**: it has deterministic exit criteria that Claude's own output can demonstrate (tests pass, a score clears a threshold, a queue empties, a build exits 0). Goal-suited tasks get a `/goal` companion in Phase 4 and a delivery pattern in Phase 5. Subjective or taste-judged outcomes (design quality, prose voice) are not goal-suited — a small evaluator model cannot judge them well; use a verifier subagent instead.
 
 ## Phase 2 — Reflect
 
@@ -70,12 +71,27 @@ Drafting rules (rationale in the guide):
 - Carry the autonomy decision: if the user set boundaries (confirm before irreversible actions, never push, etc.), state them with their why.
 - Every line must earn its place. A short crystal prompt beats a long padded one — do not import guide boilerplate the task doesn't need.
 
+### The goal companion (goal-suited tasks only)
+
+For goal-suited tasks, draft a second artifact alongside the prompt: the `/goal` condition. It is a completion contract for an evaluator, not a compressed copy of the prompt. `/goal` wraps a session-scoped stop check: after every turn, a small fast model (Haiku by default) reads the condition plus the transcript and answers met / not met — it cannot run tools or read files, and a "not met" reason is fed back as next-turn steering. Draft the condition accordingly (mechanics and template in the guide's "Loops and /goal" section):
+
+- Each criterion pairs a **measurable end state** with the **check that proves it**, so the evidence lands in the transcript ("all tests in `src/services/__tests__/split` pass — run `npx jest split` and show the summary", not "the split logic is correct").
+- **Constraints that matter**: what must not change ("no other test file is modified", "no new dependencies").
+- A **turn cap inside the text** ("stop after 20 turns") — there are no flags; the cap is part of the condition.
+- Written for a small evaluator model: crisp yes/no statements, no vague quality language.
+- Under **4,000 characters** (aim ≤3,900 for margin); report the character count on delivery.
+- Context, motivation, and instructions stay in the prompt or spec file; the goal carries only what the evaluator needs to answer yes/no.
+
 ## Phase 5 — Deliver
 
 1. Output the final prompt in a fenced code block, copy-paste ready.
-2. Below it, when relevant, 2–4 lines of session setup advice: `/goal` for long runs, a Workflow verification pass, progress/state files (`progress.txt`, `tests.json`) for multi-context-window work, verifier subagent over self-critique. Skip entirely for quick tasks.
-3. Ask: run it in this session now, or take it to a fresh Fable session? (A fresh session is better when this conversation has accumulated unrelated context.)
-4. Append a run-journal entry to `references/run-journal.md`: task shape, rounds of interview, what the user revised in the final prompt (if anything).
+2. For goal-suited tasks, deliver the goal companion with the pattern that fits the shape:
+   - **Quick verifiable task → goal-only.** One `/goal` invocation carries the task, end state + check, and turn cap. Setting a goal immediately starts a turn, so no separate prompt is needed.
+   - **Feature build / long-horizon → spec file + compact goal (the default).** Save the compiled prompt as a handover/plan file; the goal argument opens with "Implement the spec in `<file>` fully" and then the completion contract. One paste, and every turn — including the first — is goal-evaluated.
+   - **Already mid-session → prompt-then-goal.** Paste the compiled prompt, then set the compact goal once work is underway. Supported, but in a fresh session the spec-file pattern is better: it needs one paste and no unevaluated first turn.
+3. Below it, when relevant, 2–4 lines of session setup advice — pick the loop primitive deliberately: turn-based (default single session), `/goal` (verifiable exit criteria), `/loop` or `/schedule` (recurring or externally-triggered work); plus a Workflow verification pass, progress/state files (`progress.txt`, `tests.json`) for multi-context-window work, verifier subagent over self-critique. Skip entirely for quick tasks.
+4. Ask: run it in this session now, or take it to a fresh Fable session? (A fresh session is better when this conversation has accumulated unrelated context.)
+5. Append a run-journal entry to `references/run-journal.md`: task shape, rounds of interview, what the user revised in the final prompt (if anything).
 
 ## Common mistakes
 
@@ -86,3 +102,5 @@ Drafting rules (rationale in the guide):
 - **Boilerplate padding.** Importing every guide section into every prompt. A 10-line bug-fix prompt with state-file instructions is worse than the rough original.
 - **Skipping verification criteria.** A prompt without a way for Fable to check itself wastes Fable's main strength: self-correction in a loop.
 - **Interviewing past crystal.** The exit test is the colleague test, not a round count. Extra rounds after clarity is annoyance, not rigour.
+- **Cramming the compiled prompt into the goal argument.** The 4,000-character cap forces lossy compression of exactly what makes the prompt good (context-with-why), and the evaluator re-reads the condition every turn — noise degrades the stop judgment. Prompt and goal are different artifacts for different readers.
+- **Goal criteria the evaluator cannot see.** The stop-check model reads only the transcript — it runs no tools. "The dashboard looks right" or "coverage is adequate" are unjudgeable; every criterion needs the check whose output Fable will surface.
